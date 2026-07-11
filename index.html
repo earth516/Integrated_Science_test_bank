@@ -968,11 +968,12 @@
         allConcepts = (result.concepts || []);
         allOX = (result.ox || []);
         
-        // 캐시 저장 (다음 로그인 시 즉시 표시용)
+        // 캐시 저장 (다음 로그인 시 즉시 표시용 + 오프라인 로그인 시 학번 검증용)
         try {
           localStorage.setItem('sj_questions_cache', JSON.stringify(allQuestions));
           localStorage.setItem('sj_concepts_cache', JSON.stringify(allConcepts));
           localStorage.setItem('sj_ox_cache', JSON.stringify(allOX));
+          if (result.students) localStorage.setItem('sj_students_cache', JSON.stringify(result.students));
         } catch (e) {}
         
         document.getElementById('studentName').textContent = result.이름;
@@ -985,7 +986,37 @@
         loginBtn.disabled = false;
       }
     } catch (err) {
-      // ③ 서버 실패해도 캐시가 있으면 그걸로 진행
+      // ③ 서버 실패해도 캐시가 있으면 그걸로 진행 (단, 학번 명단 캐시가 있으면 등록 여부를 먼저 확인)
+      let studentsCache = null;
+      try { studentsCache = JSON.parse(localStorage.getItem('sj_students_cache') || 'null'); } catch (e) {}
+      
+      if (studentsCache && Array.isArray(studentsCache) && studentsCache.length > 0) {
+        const found = studentsCache.find(s => String(s.학번).trim() === id);
+        if (!found) {
+          msg.textContent = '❌ 등록되지 않은 학번이에요 (오프라인 상태에서도 명단에 없으면 로그인할 수 없어요)';
+          msg.className = 'msg error';
+          loginBtn.disabled = false;
+          return;
+        }
+        // 명단에 있는 학번이면 서버에 저장된 이름을 그대로 사용 + 오프라인 표시
+        if (cachedQuestions && cachedQuestions.length > 0) {
+          currentStudent = { 학번: found.학번, 이름: found.이름 + ' (오프라인)' };
+          allQuestions = cachedQuestions;
+          try { allConcepts = JSON.parse(localStorage.getItem('sj_concepts_cache') || '[]'); } catch(e) { allConcepts = []; }
+          try { allOX = JSON.parse(localStorage.getItem('sj_ox_cache') || '[]'); } catch(e) { allOX = []; }
+          document.getElementById('studentName').textContent = currentStudent.이름;
+          document.getElementById('modeName').textContent = currentStudent.이름;
+          showScreen('modeScreen');
+          msg.innerHTML = '';
+        } else {
+          msg.textContent = '⚠️ 서버 연결 실패';
+          msg.className = 'msg error';
+          loginBtn.disabled = false;
+        }
+        return;
+      }
+      
+      // 학번 명단 캐시가 아예 없는 기기(최초 접속 중 끊김 등) → 기존처럼 문제 캐시만으로 예외 허용
       if (cachedQuestions && cachedQuestions.length > 0) {
         currentStudent = { 학번: id, 이름: id + ' (오프라인)' };
         allQuestions = cachedQuestions;
