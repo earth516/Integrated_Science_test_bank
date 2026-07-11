@@ -604,7 +604,7 @@
       <img src="image/logo.png" alt="SJ 통합과학 문제은행" onerror="this.style.display='none'">
     </div>
     <div class="title">SJ 통합과학 문제은행</div>
-    <div class="subtitle">EARTH SCIENCE</div>
+    <div class="subtitle">INTEGRATED SCIENCE</div>
   </div>
 
   <!-- 로그인 -->
@@ -858,7 +858,7 @@
 </div>
 
 <script>
-  const API_URL = 'https://script.google.com/macros/s/AKfycbwVWnoIJXGRK7oJiwMpC_CkLQ3XVeycc5cjMArBzBPxZHF32HQkiGUanQ4veMI4GcMPXA/exec';  // ⚠️ 통합과학용 새 시트에 연결된 Apps Script 배포 URL로 교체
+  const API_URL = 'PASTE_NEW_APPS_SCRIPT_WEB_APP_URL_HERE';  // ⚠️ 통합과학용 새 시트에 연결된 Apps Script 배포 URL로 교체
   const IMAGE_BASE = 'image/';
   
   // 대단원 아이콘 (문제ID 앞부분 기준)
@@ -1189,7 +1189,7 @@
     document.getElementById('cOrderRandom').classList.toggle('on', m === 'random');
   }
   
-  // 소단원(부모) → 지문 제목(체크) 트리
+  // 대단원(부모) → 소단원(체크) 트리
   function renderConceptList() {
     const listEl = document.getElementById('conceptPassageList');
     const passages = (allConcepts || []).filter(c => c.지문 && c.제목);
@@ -1200,17 +1200,17 @@
       return;
     }
     
-    // 소단원별 → 개념(제목)별로 묶기 (입력 순서 유지). 같은 개념의 지문 인덱스를 모음
+    // 대단원별 → 소단원별로 묶기 (입력 순서 유지). 같은 소단원의 지문 인덱스를 모음
     const groups = [];
     const gmap = new Map();
     allConcepts.forEach((c, idx) => {
       if (!(c.지문 && c.제목)) return;
-      const key = c.소단원 || '기타';
+      const key = c.대단원 || '기타';
       let g = gmap.get(key);
-      if (!g) { g = { 소단원: key, concepts: [], _cmap: new Map() }; gmap.set(key, g); groups.push(g); }
-      let con = g._cmap.get(c.제목);
-      if (!con) { con = { 제목: c.제목, idxs: [] }; g._cmap.set(c.제목, con); g.concepts.push(con); }
-      con.idxs.push(idx);
+      if (!g) { g = { 대단원: key, subs: [], _smap: new Map() }; gmap.set(key, g); groups.push(g); }
+      let sub = g._smap.get(c.소단원 || '기타');
+      if (!sub) { sub = { 소단원: c.소단원 || '기타', idxs: [] }; g._smap.set(c.소단원 || '기타', sub); g.subs.push(sub); }
+      sub.idxs.push(idx);
     });
     
     let html = '';
@@ -1218,15 +1218,15 @@
       html += `<div class="mock-mid-block">
         <label class="mock-mid">
           <input type="checkbox" class="c-mid-cb" data-mid="${gi}" onchange="onConceptMidToggle(this)">
-          <span class="m-name">${g.소단원}</span>
-          <span class="m-count">${g.concepts.length}개</span>
+          <span class="m-name">${g.대단원}</span>
+          <span class="m-count">${g.subs.length}개</span>
         </label>
         <div class="mock-subs">`;
-      g.concepts.forEach(con => {
-        const countTag = con.idxs.length > 1 ? ` <span class="s-count">지문 ${con.idxs.length}개</span>` : '';
+      g.subs.forEach(sub => {
         html += `<label class="mock-sub">
-          <input type="checkbox" class="c-sub-cb" data-mid="${gi}" value="${con.idxs.join(',')}" onchange="onConceptSubToggle(this)">
-          <span class="s-name">${con.제목}</span>${countTag}
+          <input type="checkbox" class="c-sub-cb" data-mid="${gi}" value="${sub.idxs.join(',')}" onchange="onConceptSubToggle(this)">
+          <span class="s-name">${sub.소단원}</span>
+          <span class="s-count">지문 ${sub.idxs.length}개</span>
         </label>`;
       });
       html += `</div></div>`;
@@ -1465,7 +1465,7 @@
     document.getElementById('oxOrderSeq').classList.toggle('on', m === 'seq');
   }
   
-  // O/X 소단원 체크 목록 (시트 입력 순서)
+  // 대단원(부모) → 소단원(체크) 트리
   function renderOXList() {
     const listEl = document.getElementById('oxSubunitList');
     const items = (allOX || []).filter(q => q.문장 && (q.정답 !== '' && q.정답 != null));
@@ -1474,31 +1474,53 @@
       document.getElementById('oxStartBtn').disabled = true;
       return;
     }
-    const subs = [];
-    const smap = new Map();
+    const groups = [];
+    const gmap = new Map();
     items.forEach(q => {
-      const key = q.소단원 || '기타';
-      let s = smap.get(key);
-      if (!s) { s = { 소단원: key, count: 0 }; smap.set(key, s); subs.push(s); }
+      const mkey = q.대단원 || '기타';
+      let g = gmap.get(mkey);
+      if (!g) { g = { 대단원: mkey, subs: [], _smap: new Map() }; gmap.set(mkey, g); groups.push(g); }
+      const skey = q.소단원 || '기타';
+      let s = g._smap.get(skey);
+      if (!s) { s = { 소단원: skey, count: 0 }; g._smap.set(skey, s); g.subs.push(s); }
       s.count++;
     });
     let html = '';
-    subs.forEach(s => {
-      const safe = s.소단원.replace(/"/g, '&quot;');
-      html += `<label class="mock-sub" style="border:2px solid #e5e7eb; border-radius:12px; padding:11px 14px; margin-bottom:8px;">
-        <input type="checkbox" class="ox-sub-cb" value="${safe}" onchange="onOXSubToggle(this)">
-        <span class="s-name">${s.소단원}</span>
-        <span class="s-count">${s.count}문제</span>
-      </label>`;
+    groups.forEach((g, gi) => {
+      html += `<div class="mock-mid-block">
+        <label class="mock-mid">
+          <input type="checkbox" class="ox-mid-cb" data-mid="${gi}" onchange="onOXMidToggle(this)">
+          <span class="m-name">${g.대단원}</span>
+          <span class="m-count">${g.subs.length}개</span>
+        </label>
+        <div class="mock-subs">`;
+      g.subs.forEach(s => {
+        const safe = s.소단원.replace(/"/g, '&quot;');
+        html += `<label class="mock-sub">
+          <input type="checkbox" class="ox-sub-cb" data-mid="${gi}" value="${safe}" onchange="onOXSubToggle(this)">
+          <span class="s-name">${s.소단원}</span>
+          <span class="s-count">${s.count}문제</span>
+        </label>`;
+      });
+      html += `</div></div>`;
     });
     listEl.innerHTML = html;
-    refreshOXMaster();
+    refreshOXMidStates();
+    updateOXInfo();
+  }
+  
+  function onOXMidToggle(cb) {
+    document.querySelectorAll(`.ox-sub-cb[data-mid="${cb.dataset.mid}"]`).forEach(s => {
+      s.checked = cb.checked;
+      s.closest('.mock-sub').classList.toggle('on', cb.checked);
+    });
+    refreshOXMidStates();
     updateOXInfo();
   }
   
   function onOXSubToggle(cb) {
     cb.closest('.mock-sub').classList.toggle('on', cb.checked);
-    refreshOXMaster();
+    refreshOXMidStates();
     updateOXInfo();
   }
   function onOXMasterToggle(cb) {
@@ -1506,9 +1528,17 @@
       s.checked = cb.checked;
       s.closest('.mock-sub').classList.toggle('on', cb.checked);
     });
+    refreshOXMidStates();
     updateOXInfo();
   }
-  function refreshOXMaster() {
+  function refreshOXMidStates() {
+    document.querySelectorAll('.ox-mid-cb').forEach(mid => {
+      const subs = Array.from(document.querySelectorAll(`.ox-sub-cb[data-mid="${mid.dataset.mid}"]`));
+      const on = subs.filter(s => s.checked).length;
+      mid.checked = on === subs.length && subs.length > 0;
+      mid.indeterminate = on > 0 && on < subs.length;
+      mid.closest('.mock-mid').classList.toggle('on', mid.checked);
+    });
     const all = Array.from(document.querySelectorAll('#oxSubunitList .ox-sub-cb'));
     const on = all.filter(s => s.checked).length;
     const master = document.getElementById('oxMaster');
