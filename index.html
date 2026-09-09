@@ -795,7 +795,7 @@
   <!-- 관련개념 선택 -->
   <div id="conceptScreen" class="card hidden">
     <button class="btn-back" onclick="goToSubUnitScreen()">← 소단원 선택으로</button>
-    <div class="breadcrumb" id="conceptBreadcrumb"></div>
+    <div class="breadcrumb hidden" id="conceptBreadcrumb"></div>
     <p style="color: var(--text-light);">학습할 개념을 선택하세요 (가나다순)</p>
     <div id="conceptGrid" class="grid"></div>
   </div>
@@ -868,7 +868,7 @@
   // 2022 개정 통합과학1·2 대단원: bas(과학의 기초)/mat(물질과 규칙성)/sys(시스템과 상호작용)
   //                              /cha(변화와 다양성)/env(환경과 에너지)/fut(과학과 미래 사회)
   const PART_ICON = {
-    'bas': '🔬', 'mat': '🧪', 'sys': '⚙️', 'cha': '🧬', 'env': '🌱', 'fut': '🤖'
+    'bas': '🔬', 'mat': '🧪', 'sys': '⚙️', 'cha': '🌍', 'env': '🌱', 'fut': '🤖'
   };
 
   // 문제ID에서 대단원 코드 뽑기
