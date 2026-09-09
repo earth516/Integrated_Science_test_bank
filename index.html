@@ -858,7 +858,7 @@
 </div>
 
 <script>
-  const API_URL = 'PASTE_NEW_APPS_SCRIPT_WEB_APP_URL_HERE';  // ⚠️ 통합과학용 새 시트에 연결된 Apps Script 배포 URL로 교체
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwVWnoIJXGRK7oJiwMpC_CkLQ3XVeycc5cjMArBzBPxZHF32HQkiGUanQ4veMI4GcMPXA/exec';
   const IMAGE_BASE = 'image/';
   
   // 대단원 아이콘 (문제ID 앞부분 기준)
@@ -1016,21 +1016,11 @@
         return;
       }
       
-      // 학번 명단 캐시가 아예 없는 기기(최초 접속 중 끊김 등) → 기존처럼 문제 캐시만으로 예외 허용
-      if (cachedQuestions && cachedQuestions.length > 0) {
-        currentStudent = { 학번: id, 이름: id + ' (오프라인)' };
-        allQuestions = cachedQuestions;
-        try { allConcepts = JSON.parse(localStorage.getItem('sj_concepts_cache') || '[]'); } catch(e) { allConcepts = []; }
-        try { allOX = JSON.parse(localStorage.getItem('sj_ox_cache') || '[]'); } catch(e) { allOX = []; }
-        document.getElementById('studentName').textContent = currentStudent.이름;
-        document.getElementById('modeName').textContent = currentStudent.이름;
-        showScreen('modeScreen');
-        msg.innerHTML = '';
-      } else {
-        msg.textContent = '⚠️ 서버 연결 실패';
-        msg.className = 'msg error';
-        loginBtn.disabled = false;
-      }
+      // 학번 명단 캐시가 아예 없는 기기 → 학번을 검증할 방법이 없으므로 로그인 차단
+      // (문제 캐시만으로 통과시키던 예전 폴백은 명단 확인 없이 누구나 들어올 수 있어 보안 구멍이었음)
+      msg.textContent = '⚠️ 서버 연결에 실패했어요. 인터넷 연결을 확인하고 다시 시도해 주세요. (이 기기에서 한 번도 로그인한 적이 없으면 오프라인으로 입장할 수 없어요)';
+      msg.className = 'msg error';
+      loginBtn.disabled = false;
     }
   }
   
